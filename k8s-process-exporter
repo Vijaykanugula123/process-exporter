@@ -1,0 +1,29 @@
+helm upgrade process-exporter prometheus-process-exporter-charts/prometheus-process-exporter \
+  --namespace monitoring \
+  --set rbac.pspEnabled=false \
+  --set service.port=9256 \
+  --set service.targetPort=9256 \
+  --set containerPort=9256
+
+kubectl get cm -n monitoring process-exporter-prometheus-process-exporter -o yaml
+
+data:
+  config.yml: |
+    process_names:
+      - name: "{{.Comm}}"
+        cmdline:
+          - '.+'
+      - comm:
+          - Prometheus
+
+
+
+kubectl patch svc process-exporter-prometheus-process-exporter -n monitoring --type='json' -p='[
+  {"op": "add", "path": "/spec/template/spec/hostNetwork", "value": true},
+  {"op": "add", "path": "/spec/template/spec/dnsPolicy", "value": "ClusterFirstWithHostNet"}
+]'
+
+kubectl delete pods process-exporter -n monitoring
+
+check this on jump server
+ curl -s http://<nodeip>:9256/metrics | head -n 10
