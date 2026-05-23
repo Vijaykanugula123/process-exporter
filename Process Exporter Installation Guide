@@ -1,0 +1,123 @@
+📘 Process Exporter Installation Guide
+This guide explains how to install and configure Process Exporter on a Linux server with systemd support.
+
+
+✅ Prerequisites
+
+Linux machine (Ubuntu / CentOS / RHEL)
+
+wget, tar, and systemd installed
+Root or sudo access
+Basic CLI knowledge
+
+
+
+🧱 Step 1: Create Application Directory
+
+sudo mkdir -p /apps
+
+
+
+
+📥 Step 2: Download Process Exporter
+
+wget https://github.com/ncabatoff/process-exporter/releases/download/v0.7.5/process-exporter-0.7.5.linux-amd64.tar.gz
+
+
+
+
+📦 Step 3: Extract Archive
+
+tar -xvf process-exporter-0.7.5.linux-amd64.tar.gz
+
+
+
+
+🔄 Step 4: Rename and Move Folder
+
+mv process-exporter-0.7.5.linux-amd64 process-exporter
+
+
+
+
+🧹 Step 5: Cleanup Archive File
+
+rm -rf process-exporter-0.7.5.linux-amd64.tar.gz
+
+
+
+
+⚙️ Step 6: Create Configuration File
+
+sudo vi /apps/process-exporter/config.yaml
+
+
+Paste the following YAML:
+
+process_names:
+  - name: "{{.Comm}}"
+    cmdline:
+    - '.+'
+  - comm:
+    - Prometheus
+
+
+
+
+🔧 Step 7: Create systemd Service File
+
+sudo vi /etc/systemd/system/process-exporter.service
+
+
+Paste the following:
+
+[Unit]
+Description=Process Exporter
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/apps/process-exporter
+ExecStart=/apps/process-exporter/process-exporter -config.path config.yaml
+KillMode=process
+SuccessExitStatus=143
+TimeoutSec=10
+RestartSec=1
+SyslogIdentifier=process-exporter
+LimitNOFILE=1000000
+LimitCORE=infinity
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+
+🚀 Step 8: Start and Enable Service
+Reload systemd and start the service:
+
+sudo systemctl daemon-reload
+sudo systemctl start process-exporter.service
+sudo systemctl enable process-exporter.service
+
+
+Check service status:
+
+sudo systemctl status process-exporter.service
+
+
+
+
+⚠️ Troubleshooting Tips
+Check logs for errors:
+
+sudo journalctl -u process-exporter.service -f
+
+
+If service doesn’t start:
+
+Verify config.yaml syntax
+Ensure binary path /apps/process-exporter/process-exporter is correct
+Confirm no conflicting ports
